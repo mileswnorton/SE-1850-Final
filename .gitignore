@@ -53,3 +53,6 @@ dkms.conf
 
 # debug information files
 *.dwo
+
+# apple BS
+.ds_store
