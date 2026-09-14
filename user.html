@@ -1,0 +1,493 @@
+<!-- This will switch depending on auth state -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>User Settings | Calorie Tracker</title>
+  <link rel="stylesheet" href="styles.css" />
+  <link rel="stylesheet" href="user.css" />
+</head>
+<body>
+
+  <!-- Navbar -->
+  <ul class="navbar">
+    <li>
+      <a href="index.html" class="active">
+        <img src="Images/DashBoardLogo.png" alt="Dashboard Icon">
+        Dashboard
+      </a>
+    </li>
+    <li>
+      <a href="addentry.html">
+        <img src="Images/AddEntryLogo.png" alt="Add Entry Icon">
+        Add Entry
+      </a>
+    </li>
+    <li class="right">
+        <a href="user.html">
+          <img src="Images/user.png" alt="User" class="user-icon">
+          <span id="nav-username">User</span>
+        </a>
+
+        <!-- This will switch depending on auth state -->
+        <button id="auth-btn" class="logout-btn" style="
+          margin-left: 10px;
+          background:#19456b;
+          color:white;
+          border:none;
+          padding:6px 12px;
+          border-radius:6px;
+          cursor:pointer;
+        ">Loading...</button>
+
+    </li>
+  </ul>
+
+  <!-- Profile / Settings Section -->
+  <section class="profile-section">
+    <h1 class="section-title">Settings</h1>
+
+    <div class="profile-top">
+      <div class="profile-photo">
+        <img src="user.jpg" alt="User Photo" id="profile-pic">
+        <label for="upload-photo" class="upload-btn">Change Photo</label>
+        <input type="file" id="upload-photo" accept="image/*" hidden>
+      </div>
+      <div class="profile-info">
+        <!-- These will be overwritten by Firestore -->
+        <h2 id="display-name" contenteditable="true" class="editable">Loading...</h2>
+        <p id="display-email" class="email editable" contenteditable="true">Loading...</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="settings-section">
+  <h2>Change Password</h2>
+  <div class="settings-form">
+    <div class="detail">
+      <label>Current Password:</label>
+      <input type="password" id="current-password" placeholder="Enter current password">
+    </div>
+    <div class="detail">
+      <label>New Password:</label>
+      <input type="password" id="new-password" placeholder="Enter new password">
+    </div>
+    <button id="change-password-btn" class="save-btn">Change Password</button>
+  </div>
+</section>
+
+
+<script type="module">
+import { auth } from "./firebase-init.js";
+import { reauthenticateWithCredential, EmailAuthProvider, updatePassword } 
+  from "https://www.gstatic.com/firebasejs/12.6.0/firebase-auth.js";
+
+const changePassBtn = document.getElementById("change-password-btn");
+
+changePassBtn.addEventListener("click", async () => {
+  const user = auth.currentUser;
+  if (!user) {
+    alert("You must be logged in to change your password.");
+    return;
+  }
+
+  const currentPass = document.getElementById("current-password").value;
+  const newPass = document.getElementById("new-password").value;
+
+  if (!currentPass || !newPass) {
+    alert("Please fill out both fields.");
+    return;
+  }
+
+  try {
+    // Reauthenticate with current password
+    const cred = EmailAuthProvider.credential(user.email, currentPass);
+    await reauthenticateWithCredential(user, cred);
+
+    // Update password
+    await updatePassword(user, newPass);
+
+    alert("Password changed successfully! Please log in again.");
+    await auth.signOut();   // log out user
+    window.location.href = "/auth.html"; // redirect to login
+  } catch (err) {
+    console.error(err);
+    alert("Error changing password: " + err.message);
+  }
+});
+
+</script>
+
+
+<!-- Change Stats Section -->
+<section class="settings-section">
+  <h2>Change Stats</h2>
+
+  <div class="profile-details">
+
+    <div class="detail">
+      <label for="age-input">Age:</label>
+      <input id="age-input" type="number" min="5" value="25">
+    </div>
+
+    <div class="detail">
+      <label for="height-input">Height (ft):</label>
+      <input id="height-input" type="number" step="0.01" value="5.10">
+    </div>
+
+    <div class="detail">
+      <label for="weight-input">Weight (lb):</label>
+      <input id="weight-input" type="number" value="150">
+    </div>
+
+    <!-- SEX DROPDOWN -->
+    <div class="detail">
+      <label for="sex-input">Sex:</label>
+      <select id="sex-input">
+        <option value="male">Male</option>
+        <option value="female">Female</option>
+      </select>
+    </div>
+
+    <!-- ACTIVITY LEVEL -->
+    <div class="detail">
+      <label for="activity-input">Activity Level:</label>
+      <select id="activity-input">
+        <option value="sedentary">Sedentary (Little or no exercise)</option>
+        <option value="light">Light (1–3 days/week)</option>
+        <option value="moderate">Moderate (3–5 days/week)</option>
+        <option value="active">Active (6–7 days/week)</option>
+        <option value="very_active">Very Active (Hard daily workouts)</option>
+      </select>
+    </div>
+
+  </div>
+
+
+  <!-- GOALS SECTION -->
+   
+  <h3 style="margin-top:20px;">Goals</h3>
+  <div class="profile-details">
+
+    <div class="detail">
+      <label for="goal-pounds">Pounds Lost per Week (0–2):</label>
+      <input id="goal-pounds" type="number" min="0" max="2" step="0.1" value="0">
+    </div>
+
+  </div>
+
+  <button id="save-stats-btn" class="save-btn">Save Stats</button>
+</section>
+
+
+
+
+<script>
+    // Profile picture preview
+    const profilePic = document.getElementById("profile-pic");
+    uploadInput.addEventListener("change", function() {
+      const file = this.files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = e => profilePic.src = e.target.result;
+        reader.readAsDataURL(file);
+      }
+    });
+</script>
+
+<script type="module">
+import { auth, db } from "./firebase-init.js";
+import { doc, getDoc, updateDoc } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-firestore.js";
+import { onAuthStateChanged, signOut, updatePassword } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-auth.js";
+
+
+const nameEl = document.querySelector(".profile-info h2");
+const emailEl = document.querySelector(".profile-info .email");
+const navName = document.getElementById("nav-username");
+const profilePicEl = document.getElementById("profile-pic");
+const navUserIcon = document.querySelector(".user-icon");
+const authBtn = document.getElementById("auth-btn");
+
+// Stats Inputs
+const ageInput = document.getElementById("age-input");
+const heightInput = document.getElementById("height-input");
+const weightInput = document.getElementById("weight-input");
+const sexInput = document.getElementById("sex-input");
+const activityInput = document.getElementById("activity-input");
+const goalPoundsInput = document.getElementById("goal-pounds"); 
+
+const saveStatsBtn = document.getElementById("save-stats-btn");
+
+// Loading placeholders
+nameEl.textContent = "Loading...";
+emailEl.textContent = "Loading...";
+
+// -----------------------------
+// AUTH + LOAD FIRESTORE PROFILE
+// -----------------------------
+onAuthStateChanged(auth, async (user) => {
+
+  if (!user) {
+    authBtn.textContent = "Login";
+    authBtn.onclick = () => window.location.href = "/auth.html";
+
+    navName.textContent = "User";
+    nameEl.textContent = "Not signed in";
+    emailEl.textContent = "";
+    profilePicEl.src = "user.jpg";
+    navUserIcon.src = "Images/user.png";
+
+    // Clear fields
+    if (ageInput) ageInput.value = "";
+    if (heightInput) heightInput.value = "";
+    if (weightInput) weightInput.value = "";
+    if (sexInput) sexInput.value = "";
+    if (activityInput) activityInput.value = "sedentary";
+    if (goalTypeInput) goalTypeInput.value = "maintain";
+    if (goalWeightInput) goalWeightInput.value = "";
+
+    return;
+  }
+
+  // User logged in → show logout button
+  authBtn.textContent = "Logout";
+  authBtn.onclick = async () => {
+    await signOut(auth);
+    window.location.href = "/auth.html";
+  };
+
+  // Load profile data
+  const docRef = doc(db, "users", user.uid);
+  const snap = await getDoc(docRef);
+
+  if (snap.exists()) {
+    const data = snap.data();
+
+    nameEl.textContent = data.name || "User";
+    navName.textContent = data.name || "User";
+    emailEl.textContent = data.email || "";
+
+    // Profile photo
+    if (data.photoBase64 || data.photoURL) {
+      const photoSrc = data.photoBase64 || data.photoURL;
+      profilePicEl.src = photoSrc;
+      navUserIcon.src = photoSrc;
+    } else {
+      profilePicEl.src = "user.jpg";
+      navUserIcon.src = "Images/user.png";
+    }
+
+    // Load stats
+    if (data.age) ageInput.value = data.age;
+    if (data.height) heightInput.value = data.height;
+    if (data.weight) weightInput.value = data.weight;
+    if (data.sex) sexInput.value = data.sex;
+    
+    if (data.goalPounds) goalPoundsInput.value = data.goalPounds;
+  }
+}); 
+
+
+
+/* -----------------------
+  PROFILE PHOTO UPLOAD (BASE64)
+------------------------*/
+const uploadInput = document.getElementById("upload-photo");
+
+uploadInput.addEventListener("change", async (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+
+  const user = auth.currentUser;
+  if (!user) {
+    alert("You must be logged in to upload a photo.");
+    return;
+  }
+
+  const reader = new FileReader();
+
+  reader.onload = async function (evt) {
+    const base64String = evt.target.result;
+
+    try {
+      await updateDoc(doc(db, "users", user.uid), { photoBase64: base64String });
+
+      profilePicEl.src = base64String;
+      navUserIcon.src = base64String;
+
+      alert("Profile photo updated!");
+    } catch (error) {
+      console.error(error);
+      alert("Error saving image: " + error.message);
+    }
+  };
+
+  reader.readAsDataURL(file);
+});
+
+/* -----------------------
+  SAVE STATS
+------------------------*/
+// ------------------------------------
+// SAVE STATS BUTTON
+// ------------------------------------
+if (saveStatsBtn) {
+  saveStatsBtn.addEventListener("click", async () => {
+    const user = auth.currentUser;
+    if (!user) {
+      alert("You must be logged in to save your stats.");
+      return;
+    }
+
+    // Gather inputs
+    const age = parseInt(ageInput.value);
+    const height = parseFloat(heightInput.value);
+    const weight = parseFloat(weightInput.value);
+    const sex = sexInput.value;
+    const activity = activityInput.value;
+    const goalPounds = parseFloat(goalPoundsInput.value);
+
+    // Validate inputs
+    if (isNaN(age) || isNaN(height) || isNaN(weight)) {
+      alert("Please enter valid numbers for age, height, and weight.");
+      return;
+    }
+
+    if (isNaN(goalPounds) || goalPounds < 0 || goalPounds > 2) {
+      alert("Please enter a valid pounds lost per week (0–2).");
+      return;
+    }
+
+    try {
+  // Convert height from decimal feet to feet + inches
+  const heightFeet = Math.floor(height);
+  const heightInches = Math.round((height - heightFeet) * 12);
+
+  // Convert sex to single char 'M' or 'F'
+  const sexChar = sex.toUpperCase().startsWith('M') ? 'M' : 'F';
+
+  // deficitModifier: use goalPounds (0-2) as integer 0,1,2
+  const deficitModifier = Math.round(goalPounds); 
+
+  // Send data to CGI to calculate DailyCalories and DailyProtein
+  const params = new URLSearchParams({
+    weight,                // weight in lbs
+    heightFeet,
+    heightInches,
+    age,
+    deficitModifier,
+    sex: sexChar,
+    activity
+  });
+
+  const response = await fetch(`/cgi-bin/calories.cgi?${params.toString()}`);
+  const result = await response.json();
+
+  if (result.status === "ok") {
+    // Extract CGI-calculated values
+    const DailyCalories = result.DailyCalories || 0;
+    const DailyProtein = result.DailyProtein || 0;
+
+    // Save all stats to Firestore
+    await updateDoc(doc(db, "users", user.uid), {
+      age,
+      height,
+      weight,
+      sex,
+      activity,
+      goalPounds,
+      DailyCalories,
+      DailyProtein
+    });
+
+    alert(`Stats saved successfully!\nDaily Calories: ${DailyCalories}\nDaily Protein: ${DailyProtein}g`);
+  } else {
+    alert("Error from CGI: " + result.message);
+  }
+} catch (err) {
+    console.error(err);
+    alert("Error saving stats: " + err.message);
+  }
+
+  });
+}
+
+
+</script>
+
+
+<section class="settings-section" style="margin-top: 40px;">
+  <h2 style="color: red;">Delete Account</h2>
+
+  <div class="settings-form">
+    <div class="detail">
+      <label>Confirm Password:</label>
+      <input type="password" id="delete-password" placeholder="Enter password to confirm">
+    </div>
+
+    <button id="delete-account-btn" style="
+      background: #b00020;
+      color: white;
+      padding: 10px 16px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      width: 200px;
+    ">
+      Delete Account
+    </button>
+  </div>
+</section>
+
+<script type="module">
+import { auth, db } from "./firebase-init.js";
+import { EmailAuthProvider, reauthenticateWithCredential, deleteUser } 
+  from "https://www.gstatic.com/firebasejs/12.6.0/firebase-auth.js";
+import { doc, deleteDoc } 
+  from "https://www.gstatic.com/firebasejs/12.6.0/firebase-firestore.js";
+
+const deleteBtn = document.getElementById("delete-account-btn");
+
+deleteBtn.addEventListener("click", async () => {
+  const user = auth.currentUser;
+  if (!user) {
+    alert("You must be logged in.");
+    return;
+  }
+
+  const pass = document.getElementById("delete-password").value;
+  if (!pass) {
+    alert("Please enter your password.");
+    return;
+  }
+
+  const confirmDelete = confirm(
+    "Are you sure you want to permanently delete your account? This cannot be undone."
+  );
+  if (!confirmDelete) return;
+
+  try {
+    // Re-authenticate
+    const cred = EmailAuthProvider.credential(user.email, pass);
+    await reauthenticateWithCredential(user, cred);
+
+    // Delete Firestore user data
+    await deleteDoc(doc(db, "users", user.uid));
+
+    // Delete Firebase Auth user
+    await deleteUser(user);
+
+    alert("Your account has been deleted.");
+    window.location.href = "/auth.html";
+
+  } catch (error) {
+    console.error(error);
+    alert("Error: " + error.message);
+  }
+});
+</script>
+
+
+</body>
+</html>

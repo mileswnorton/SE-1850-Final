@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Login | Calorie Tracker</title>
+  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="user.css">
+  <style>
+    .auth-container {
+      max-width: 450px;
+      margin: 80px auto;
+      background: white;
+      padding: 30px;
+      border-radius: 12px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+    }
+
+    .auth-container h2 {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+
+    .auth-container input {
+      width: 100%;
+      padding: 12px;
+      margin: 8px 0;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+    }
+
+    .auth-container button {
+      width: 100%;
+      padding: 12px;
+      background: #19456b;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      margin-top: 10px;
+    }
+
+    .tab-buttons {
+      display: flex;
+      margin-bottom: 20px;
+    }
+
+    .tab-buttons button {
+      flex: 1;
+      padding: 10px;
+      border-radius: 8px;
+      border: none;
+      cursor: pointer;
+      background: #e1e1e1;
+    }
+
+    .tab-buttons .active {
+      background: #19456b;
+      color: white;
+    }
+
+    .hidden { display: none; }
+  </style>
+</head>
+<body>
+
+  <!-- Navbar -->
+  <ul class="navbar">
+    <li><a href="index.html">
+      <img src="Images/DashBoardLogo.png"> Dashboard
+    </a></li>
+
+    <li><a href="addentry.html">
+      <img src="Images/AddEntryLogo.png"> Add Entry
+    </a></li>
+
+    <li class="right">
+      <a href="user.html">
+        <img src="Images/user.png" class="user-icon">
+        User
+      </a>
+    </li>
+  </ul>
+
+  <!-- Auth Box -->
+  <div class="auth-container">
+    <div class="tab-buttons">
+      <button id="login-tab" class="active">Login</button>
+      <button id="signup-tab">Create Account</button>
+    </div>
+
+    <!-- LOGIN -->
+    <div id="login-section">
+      <h2>Login</h2>
+      <input id="login-email" type="email" placeholder="Email">
+      <input id="login-password" type="password" placeholder="Password">
+      <button onclick="handleLogin()">Log In</button>
+    </div>
+
+    <!-- SIGNUP -->
+    <div id="signup-section" class="hidden">
+      <h2>Create Account</h2>
+      <input id="signup-name" type="text" placeholder="Full Name">
+      <input id="signup-email" type="email" placeholder="Email">
+      <input id="signup-password" type="password" placeholder="Password">
+      <button onclick="handleSignup()">Create Account</button>
+    </div>
+  </div>
+
+  <!-- Firebase Scripts -->
+  <script type="module" src="./firebase-init.js"></script>
+  <script type="module" src="./auth.js"></script>
+
+  <script>
+    // Tab switching
+    const loginTab = document.getElementById("login-tab");
+    const signupTab = document.getElementById("signup-tab");
+    const loginSec = document.getElementById("login-section");
+    const signupSec = document.getElementById("signup-section");
+
+    loginTab.onclick = () => {
+      loginTab.classList.add("active");
+      signupTab.classList.remove("active");
+      loginSec.classList.remove("hidden");
+      signupSec.classList.add("hidden");
+    };
+
+    signupTab.onclick = () => {
+      signupTab.classList.add("active");
+      loginTab.classList.remove("active");
+      signupSec.classList.remove("hidden");
+      loginSec.classList.add("hidden");
+    };
+  </script>
+
+</body>
+</html>

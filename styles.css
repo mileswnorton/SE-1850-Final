@@ -1,0 +1,296 @@
+:root {
+  --bg: #f6f7fb;
+  --card-bg: #fff;
+  --text: #1e293b;
+  --muted: #64748b;
+  --accent: #2563eb;
+  --border: #e2e8f0;
+  --radius: 12px;
+  --shadow: 0 6px 18px rgba(15, 23, 42, 0.06);
+  font-family: "Inter", system-ui, sans-serif;
+}
+
+/* Global reset */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+/* Base layout */
+body {
+  background-image: url("Images/BackgroundIMG.jpg");
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-attachment: fixed; /* optional parallax effect */
+  color: var(--text);
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  padding-top: 60px; /* space for navbar */
+}
+
+
+/* Nav bar container */
+ul.navbar {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  background: linear-gradient(to bottom, #19456b 90%, #16c79a 10%);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  position: fixed;  /* Make it stay at the top */
+  top: 0;
+  left: 0;
+  width: 100%;
+  z-index: 1000;     /* Keep it above everything */
+}
+
+/* Nav links */
+ul.navbar li {
+  display: flex;
+  align-items: center;
+}
+
+ul.navbar li a {
+  display: flex;
+  align-items: center;
+  color: white;
+  text-decoration: none;
+  padding: 14px 20px;
+  font-weight: 600;
+  font-size: 16px;
+  transition: background 0.2s ease;
+}
+
+/* Icon styling */
+ul.navbar li a img {
+  height: 20px;
+  width: 20px;
+  margin-right: 8px;
+}
+
+/* Special style for profile icon */
+ul.navbar li a .user-icon {
+  height: 28px;
+  width: 28px;
+  border-radius: 50%;
+  object-fit: cover;
+  margin-right: 8px;
+  border: 2px solid white;
+}
+
+/* Hover/active states */
+ul.navbar li a:hover {
+  background-color: rgba(255, 255, 255, 0.15);
+}
+
+ul.navbar li a.active {
+  text-decoration: underline;
+}
+
+/* Right-aligned item */
+ul.navbar li.right {
+  margin-left: auto;
+}
+/* --- Layout --- */
+.welcome-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: calc(100vh - 80px);
+  text-align: center;
+  padding-top: 40px;
+}
+f4f7fc
+.welcome-section h1 {
+  font-family: "Inter", system-ui, sans-serif;
+  font-size: 2rem;
+  color: #1e293b;
+  margin-bottom: 20px;
+}
+
+/* --- Circular Progress --- */
+.circular-container {
+  width: 30vw;
+  aspect-ratio: 1 / 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  position: relative;
+}
+
+.circular-wrapper {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
+.circular-progress {
+  width: 100%;
+  height: 100%;
+  --stroke-width: 20px;
+  --radius: 105;
+  --circumference: calc(var(--radius) * 3.1416 * 2);
+  position: relative; /* make sure positioned parent exists */
+}
+
+/* --- Center Image --- */
+.center-image {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 80%;    /* <-- 90% of the circle container */
+  height: 80%;
+  border-radius: 50%;
+  object-fit: cover;
+  z-index: -1; 
+}
+
+
+/* --- Circle Styling --- */
+.circular-progress circle {
+  cx: 125;
+  cy: 125;
+  r: var(--radius);
+  stroke-width: var(--stroke-width);
+  fill: none;
+  stroke-linecap: round;
+}
+
+.circular-progress circle.bg {
+  stroke: #ddd;
+}
+
+.circular-progress circle.fg {
+  transform: rotate(-90deg);
+  transform-origin: 125px 125px;
+  stroke: #5394fd;
+  stroke-dasharray: 0 calc(var(--circumference));
+  transition: stroke-dasharray 1s ease-out;
+}
+
+/* --- Text Styling --- */
+.circular-progress text {
+  font-family: 'Segoe UI', sans-serif;
+  text-anchor: middle;
+  fill: #333;
+  pointer-events: none; /* so text doesn’t block the image */
+}
+
+.circular-progress text.title {
+  font-size: 1.2em;
+  font-weight: bold;
+}
+
+.circular-progress text.date {
+  font-size: 0.9em;
+  fill: #666;
+}
+
+/* --- Macros bar under circle --- */
+.macros-bar {
+  width: 200%;
+  margin-top: 20px; /* space between circle and bars */
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  background: white;
+  padding: 10px 20px;
+  border-radius: 10px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
+}
+
+/* Each macro group */
+.macro {
+  flex: 1;
+  text-align: center;
+  color: #1e293b;
+  font-family: sans-serif;
+  margin: 0 10px;
+}
+
+/* Label */
+.label {
+  display: block;
+  font-size: 14px;
+  margin-bottom: 5px;
+}
+
+/* Progress bar background */
+.progress {
+  background: #ddd;
+  border-radius: 10px;
+  height: 10px;
+  overflow: hidden;
+}
+
+/* Fill styles */
+.fill {
+  height: 100%;
+  border-radius: 10px;
+  transition: width 0.4s ease;
+}
+
+/* Custom colors for each bar */
+.fill.protein {
+  background: #4CAF50; /* green */
+}
+
+.fill.carbs {
+  background: #2196F3; /* blue */
+}
+
+.fill.fat {
+  background: #FF9800; /* orange */
+}
+.food-log-container {
+  background: #ffffff;
+  padding: 20px;
+  border-radius: 16px;
+  width: 20%;
+  margin: 30px auto;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+.food-log-container h2 {
+  color: #19456b;
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+.food-log-box {
+  padding: 15px 0;
+  text-align: center;
+  border-bottom: 1px solid #ddd;
+}
+
+.food-log-box:last-child {
+  border-bottom: none; /* Clean bottom edge */
+}
+
+.food-log-box p {
+  margin: 6px 0;
+  font-size: 1em;
+  color: #333;
+}
+
+#calories_chart {
+  width: 90%;                /* not full screen */
+  height: 400px;
+  margin: 30px auto 0 auto;  /* centers the chart */
+  
+  background: white;         /* so rounded corners show */
+  border-radius: 20px;       /* rounded edges */
+  padding: 20px;             /* optional, adds breathing room */
+  
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1); /* optional, looks cleaner */
+}

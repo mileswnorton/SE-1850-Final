@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Calorie Tracker</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <!-- Navbar -->
+  <ul class="navbar">
+	  <li>
+		<a href="index.html" class="active">
+		  <img src="Images/DashBoardLogo.png" alt="Dashboard Icon">
+		  Dashboard
+		</a>
+	  </li>
+	  <li>
+		<a href="addentry.html">
+		  <img src="Images/AddEntryLogo.png" alt="Add Entry Icon">
+		  Add Entry
+		</a>
+	  </li>
+	  <li class="right">
+		<a href="user.html">
+		  <img src="Images/user.png" alt="User" class="user-icon">
+		  <span id="nav-username">User</span>
+		</a>
+	  </li>
+	</ul>
+</body>
+
+<section class="welcome-section">
+  <h1 id="welcome-title">Welcome, User</h1>
+
+  <div class="circular-container">
+    <div class="circular-wrapper">
+      <svg viewBox="0 0 250 250" class="circular-progress">
+        <circle class="bg"></circle>
+        <circle class="fg"></circle>
+        <!-- Text now above image -->
+        <text x="125" y="115" class="title">Progress</text>
+        <text x="125" y="140" class="date" id="progress-date"></text>
+      </svg>
+
+      <!-- Image centered inside circle -->
+      <img src="Images/CenterCircle.png" alt="Center Icon" class="center-image">
+    </div>
+  </div>
+  <!-- Specifics Bars -->
+  <div class="macros-bar">
+  <div class="macro">
+    <span class="label">Protein</span>
+    <div class="progress">
+      <div class="fill protein" style="width: 70%;"></div>
+    </div>
+  </div>
+
+  
+</div>
+
+</section>
+
+
+<footer class="footer"></footer>
+
+<script>
+  // Set today's date
+  const dateElem = document.getElementById('progress-date');
+  const today = new Date();
+  dateElem.textContent = today.toLocaleDateString(undefined, {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric'
+  });
+
+  const fg = document.querySelector('.fg');
+  const radius = 105;
+  const circumference = radius * Math.PI * 2;
+
+  function animateTo(value) {
+    const dash = (value / 100) * circumference;
+    fg.style.strokeDasharray = `${dash} ${circumference - dash}`;
+  }
+
+  animateTo(30); // Example: animate to 30%
+</script>
+
+
+<div class="food-log-container">
+  <h2>Food Log</h2>
+
+  <div class="food-log-box" id="foodLogBox">
+    <p>Loading...</p>
+  </div>
+</div>
+
+
+<script type="module">
+
+function toLocalYMD(d) {
+  return d.toLocaleDateString("en-CA");
+}
+
+import { onAuthChange, fetchFoodEntries, auth } from "./firebase-init.js";
+
+onAuthChange(async (user) => {
+  const box = document.getElementById("foodLogBox");
+
+  if (!user) {
+    box.innerHTML = "<p>Please log in to see your food log.</p>";
+    return;
+  }
+
+  const entries = await fetchFoodEntries(user.uid);
+
+  // Today's date string (YYYY-MM-DD)
+  const todayStr = toLocalYMD(new Date());
+
+  // Filter to keep only today's entries
+  const todaysEntries = entries.filter((e) => {
+    const entryDate = toLocalYMD(e.createdAt?.toDate?.() || new Date(e.time));
+    return entryDate === todayStr;
+  });
+
+  if (todaysEntries.length === 0) {
+    box.innerHTML = "<p>No entries added today.</p>";
+    return;
+  }
+
+  box.innerHTML = todaysEntries
+    .map((e) => {
+      const time = e.createdAt?.toDate
+        ? e.createdAt.toDate().toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })
+        : new Date(e.time).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
+
+      return `
+        <div class="food-line">
+          <strong>${escapeHtml(e.meal)}</strong> — 
+          ${e.calories} cal • ${e.protein}g 
+          <small>${time}</small>
+        </div>`;
+    })
+    .join("");
+});
+
+// HTML escaping
+function escapeHtml(s = "") {
+  return s.replace(/[&<>"']/g, (c) => {
+    return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
+  });
+}
+</script>
+<div id="calories_chart"></div>
+
+
+<!-- Load Google Charts FIRST -->
+<script src="https://www.gstatic.com/charts/loader.js"></script>
+
+<script type="module">
+function toLocalYMD(date) {
+  return date.toLocaleDateString("en-CA"); // YYYY-MM-DD
+}
+
+import { auth, db } from "./firebase-init.js";
+import { collection, query, orderBy, getDocs } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-firestore.js";
+
+// Load Google Charts
+google.charts.load("current", { packages: ["corechart"] });
+google.charts.setOnLoadCallback(waitForUser);
+
+function waitForUser() {
+  const unsub = auth.onAuthStateChanged(user => {
+    if (user) {
+      drawCaloriesChart(user);
+      unsub();
+    }
+  });
+}
+
+async function drawCaloriesChart(user) {
+  const logsRef = collection(db, "users", user.uid, "foodLogs");
+
+  // fetch logs
+  const q = query(logsRef, orderBy("createdAt", "asc"));
+  const snapshot = await getDocs(q);
+
+  if (snapshot.empty) {
+    document.getElementById("calories_chart").innerHTML = "No entries added yet.";
+    return;
+  }
+
+  // build date range for last 7 days
+  const today = new Date();
+  const start = new Date(today);
+  start.setDate(today.getDate() - 6); // gets the last 6 days + today = 7 days total
+
+  // Prepare a mapping
+  const dayNames = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
+  const weeklyTotals = {};
+  const dayOrder = [];
+
+  const cursor = new Date(start);
+  for (let i = 0; i < 7; i++) {
+    const dayStr = toLocalYMD(cursor);
+    const weekday = dayNames[cursor.getDay()];
+    weeklyTotals[dayStr] = 0;
+    dayOrder.push({ key: dayStr, label: weekday });
+    cursor.setDate(cursor.getDate() + 1);
+  }
+
+  // instert logs into the mapping
+  snapshot.forEach(doc => {
+    const log = doc.data();
+    const ts = log.createdAt?.toDate?.() || new Date(log.time);
+    const dayString = toLocalYMD(ts);
+    const cals = Number(log.calories) || 0;
+
+    if (weeklyTotals.hasOwnProperty(dayString)) {
+      weeklyTotals[dayString] += cals;
+    }
+  });
+
+  // Build chart data
+  const data = [["Day", "Total Calories"]];
+  dayOrder.forEach(d => {
+    data.push([d.label, weeklyTotals[d.key]]);
+  });
+
+  const chartData = google.visualization.arrayToDataTable(data);
+
+  const options = {
+    title: 'Daily Calories (Last 7 Days)',
+    curveType: 'function',
+    backgroundColor: '#FFFFFF',
+    legend: { position: 'bottom', textStyle: { color: '#fff' } },
+    colors: ['#00e676'],
+    pointSize: 6,
+    series: { 0: { lineWidth: 3 } },
+    hAxis: {
+      title: 'Day',
+      textStyle: { color: '#000' },
+      titleTextStyle: { color: '#000000' },
+      gridlines: { color: '#ccc' }
+    },
+    vAxis: {
+      title: 'Calories',
+      textStyle: { color: '#000' },
+      titleTextStyle: { color: '#000000' },
+      gridlines: { color: '#ccc' }
+    },
+    chartArea: { width: '80%', height: '65%' }
+  };
+
+  const chart = new google.visualization.LineChart(
+    document.getElementById("calories_chart")
+  );
+
+  chart.draw(chartData, options);
+
+  window.addEventListener("resize", () => {
+    chart.draw(chartData, options);
+  });
+}
+</script>
+
+
+
+
+<script type="module">
+function toLocalYMD(date) {
+  return date.toLocaleDateString("en-CA"); // YYYY-MM-DD
+}
+
+import { auth, db } from "./firebase-init.js";
+import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-auth.js";
+import { doc, getDoc, collection, query, getDocs } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-firestore.js";
+
+// Navbar / Welcome Elements
+const navName = document.getElementById("nav-username");
+const welcomeTitle = document.getElementById("welcome-title");
+const navUserIcon = document.querySelector(".user-icon"); // navbar user icon
+
+// Circular & protein bar elements
+const fg = document.querySelector('.fg');
+const proteinFill = document.querySelector('.fill.protein');
+const radius = 105;
+const circumference = radius * Math.PI * 2;
+
+// Temporary loading state
+navName.textContent = "Loading...";
+welcomeTitle.textContent = "Welcome, Loading...";
+navUserIcon.src = "Images/user.png";
+
+// Animate circular progress
+function animateTo(value) {
+  const dash = (value / 100) * circumference;
+  fg.style.strokeDasharray = `${dash} ${circumference - dash}`;
+}
+
+// Update protein bar
+function updateProteinBar(percent) {
+  proteinFill.style.width = `${percent}%`;
+}
+
+onAuthStateChanged(auth, async (user) => {
+  if (!user) {
+    navName.textContent = "User";
+    welcomeTitle.textContent = "Welcome, User";
+    navUserIcon.src = "Images/user.png";
+    return;
+  }
+
+  // Get user document
+  const docRef = doc(db, "users", user.uid);
+  const snap = await getDoc(docRef);
+
+  let DailyCalories = 2000;
+  let DailyProtein = 150;
+
+  if (snap.exists()) {
+    const data = snap.data();
+    navName.textContent = data.name || "User";
+    welcomeTitle.textContent = `Welcome, ${data.name || "User"}`;
+
+    // User photo if available
+    if (data.photoBase64 || data.photoURL) {
+      navUserIcon.src = data.photoBase64 || data.photoURL;
+    }
+
+    // Set daily goals if present
+    if (data.DailyCalories) DailyCalories = data.DailyCalories;
+    if (data.DailyProtein) DailyProtein = data.DailyProtein;
+  } else {
+    navName.textContent = "User";
+    welcomeTitle.textContent = "Welcome, User";
+    navUserIcon.src = "Images/user.png";
+  }
+
+  // Get today's date
+  const todayStr = toLocalYMD(new Date());
+
+  // Fetch today's food logs
+  const logsRef = collection(db, "users", user.uid, "foodLogs");
+  const snapshot = await getDocs(logsRef);
+  
+  let totalCalories = 0;
+  let totalProtein = 0;
+
+  snapshot.forEach(doc => {
+    const data = doc.data();
+
+    // Determine the date of the log
+    let logDate = data.date;
+    if (!logDate && data.createdAt?.toDate) {
+      logDate = toLocalYMD(data.createdAt.toDate());
+    }
+
+    if (logDate === todayStr) {
+      totalCalories += Number(data.calories) || 0;
+      totalProtein += Number(data.protein) || 0;
+    }
+  });
+
+  // Calculate percentages
+  const caloriesPercent = Math.min((totalCalories / DailyCalories) * 100, 100);
+  const proteinPercent = Math.min((totalProtein / DailyProtein) * 100, 100);
+
+  // Animate
+  animateTo(caloriesPercent);
+  updateProteinBar(proteinPercent);
+
+  // Optional: update text inside circle
+  const progressText = document.querySelector('.circular-progress .title');
+  progressText.textContent = `${Math.round(caloriesPercent)}%`;
+});
+</script>
+
+
+
+</body>
+
+</html>
+

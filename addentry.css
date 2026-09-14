@@ -1,0 +1,93 @@
+/* --- GLOBAL STYLE (inherits same type look as user.css) --- */
+body {
+  font-family: 'Segoe UI', sans-serif;
+  background-color: #f2f6fc;
+  margin: 0;
+  padding: 0;
+}
+
+
+.entry-section,
+.entry-card {
+  max-width: 900px;   /* same width for all */
+  width: 100%;        /* responsive */
+  margin: 20px auto;  /* center align */
+  padding: 40px;      /* same padding */
+  border-radius: 12px;
+  background: #fff;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+}
+
+.section-title {
+  font-size: 2em;
+  color: #19456b;
+  margin-bottom: 25px;
+  text-align: center;
+}
+
+
+/* Input layout same as user.css */
+.detail {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 18px;
+}
+
+.detail label {
+  font-weight: bold;
+  font-size: 0.9em;
+  color: #333;
+  margin-bottom: 5px;
+}
+
+.detail input {
+  padding: 10px;
+  border-radius: 8px;
+  border: 1px solid #ccc;
+  font-size: 1em;
+}
+
+/* Upload button (similar to Change Photo) */
+.upload-btn {
+  display: inline-block;
+  background: #19456b;
+  color: white;
+  padding: 8px 14px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  margin-top: 10px;
+}
+
+/* Save button stays consistent */
+.save-btn {
+  background: #5394fd;
+  color: white;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 8px;
+  font-size: 1em;
+  cursor: pointer;
+  transition: 0.3s;
+  margin-top: 10px;
+}
+
+.save-btn:hover {
+  background: #407de3;
+}
+
+/* Add this to your styles.css or addentry.css */
+.delete-btn {
+  background-color: #e53935; /* Red color */
+  color: #fff;               /* White text */
+  border: none;
+  padding: 12px 24px;
+  font-size: 16px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.delete-btn:hover {
+  background-color: #d32f2f; /* Darker red on hover */
+}

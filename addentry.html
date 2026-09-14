@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Add Entry | Calorie Tracker</title>
+
+  <!-- Styles -->
+  <link rel="stylesheet" href="styles.css" />
+  <link rel="stylesheet" href="addentry.css" />
+</head>
+
+<body>
+
+  <!-- Navbar -->
+  <ul class="navbar">
+    <li>
+      <a href="index.html">
+        <img src="Images/DashBoardLogo.png" alt="Dashboard Icon">
+        Dashboard
+      </a>
+    </li>
+
+    <li>
+      <a href="addentry.html" class="active">
+        <img src="Images/AddEntryLogo.png" alt="Add Entry Icon">
+        Add Entry
+      </a>
+    </li>
+
+    <li class="right">
+      <a href="user.html">
+        <img src="Images/user.png" alt="User" class="user-icon" id="nav-user-icon">
+        <span id="nav-username">User</span>
+      </a>
+    </li>
+  </ul>
+
+  <!-- Header -->
+  <section class="entry-card">
+    <h1 class="section-title">Add Food Entry</h1>
+  </section>
+
+  <!-- Add Entry Form -->
+  <section class="entry-card">
+    <h2 style="color:#19456b; margin-bottom:20px;">Quick Add</h2>
+
+    <div class="detail">
+      <label>Meal Name:</label>
+      <input type="text" id="mealName" placeholder="e.g., Grilled Chicken" />
+    </div>
+
+    <div class="detail">
+      <label>Calories:</label>
+      <input type="number" id="calories" placeholder="e.g., 420" />
+    </div>
+
+    <div class="detail">
+      <label>Protein (g):</label>
+      <input type="number" id="protein" placeholder="e.g., 38" />
+    </div>
+
+    <label for="upload-img" class="upload-btn">Upload Food Photo</label>
+    <input id="upload-img" type="file" accept="image/*" hidden>
+
+    <button class="save-btn" id="saveEntry">Add Entry</button>
+  </section>
+
+    <!-- Delete Last Entry Section -->
+  <section class="entry-card">
+    <h2 style="color:#19456b; margin-bottom:20px;">Delete Last Entry</h2>
+    <p style="color:#555;">Click the button below to remove your most recent food entry.</p>
+    <button class="delete-btn" id="deleteLastEntry">Delete Last Entry</button>
+  </section>
+
+
+<script type="module">
+import { onAuthChange, addFoodEntry, auth, db } from "./firebase-init.js";
+import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-auth.js";
+import { doc, getDoc, collection, query, orderBy, limit, getDocs, deleteDoc, doc as docRef } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-firestore.js";
+
+document.addEventListener("DOMContentLoaded", () => {
+
+  // Redirect if not logged in
+  onAuthChange((user) => {
+    if (!user) window.location.href = "/auth.html";
+  });
+
+  // Save entry to Firestore
+  async function saveEntry() {
+    const mealElem = document.getElementById("mealName");
+    const calElem = document.getElementById("calories");
+    const proteinElem = document.getElementById("protein");
+
+    if (!mealElem || !calElem || !proteinElem) return;
+
+    const meal = mealElem.value.trim();
+    const calories = Number(calElem.value);
+    const protein = Number(proteinElem.value);
+
+    const user = auth.currentUser;
+    if (!user) return alert("Please log in first.");
+
+    if (!meal || isNaN(calories) || isNaN(protein)) {
+      alert("Please fill out all fields.");
+      return;
+    }
+
+    const entry = {
+      meal,
+      calories,
+      protein,
+      time: new Date().toISOString()
+    };
+
+    try {
+      await addFoodEntry(user.uid, entry);
+      alert("Entry saved!");
+
+      // Update summary display if elements exist
+      const totalCalsElem = document.getElementById("totalCals");
+      const totalProteinElem = document.getElementById("totalProtein");
+
+      if (totalCalsElem) totalCalsElem.textContent = Number(totalCalsElem.textContent || 0) + calories;
+      if (totalProteinElem) totalProteinElem.textContent = Number(totalProteinElem.textContent || 0) + protein;
+
+      // Clear form
+      mealElem.value = "";
+      calElem.value = "";
+      proteinElem.value = "";
+
+    } catch (e) {
+      alert("Error saving entry: " + e.message);
+    }
+  }
+
+  // Delete the last added food entry
+  async function deleteLastEntry() {
+    const user = auth.currentUser;
+    if (!user) return alert("Please log in first.");
+
+    try {
+      const logsRef = collection(db, "users", user.uid, "foodLogs");
+      const q = query(logsRef, orderBy("time", "desc"), limit(1));
+      const snapshot = await getDocs(q);
+
+      if (snapshot.empty) {
+        alert("No entries to delete.");
+        return;
+      }
+
+      const docToDelete = snapshot.docs[0];
+      const data = docToDelete.data();
+
+      await deleteDoc(docRef(db, "users", user.uid, "foodLogs", docToDelete.id));
+      alert(`Deleted last entry: ${data.meal}`);
+
+      // Update summary display if elements exist
+      const totalCalsElem = document.getElementById("totalCals");
+      const totalProteinElem = document.getElementById("totalProtein");
+
+      if (totalCalsElem) totalCalsElem.textContent = Math.max(0, Number(totalCalsElem.textContent || 0) - (data.calories || 0));
+      if (totalProteinElem) totalProteinElem.textContent = Math.max(0, Number(totalProteinElem.textContent || 0) - (data.protein || 0));
+
+    } catch (e) {
+      alert("Error deleting last entry: " + e.message);
+    }
+  }
+
+  // Event listeners
+  const saveBtn = document.getElementById("saveEntry");
+  if (saveBtn) saveBtn.addEventListener("click", saveEntry);
+
+  const deleteBtn = document.getElementById("deleteLastEntry");
+  if (deleteBtn) deleteBtn.addEventListener("click", deleteLastEntry);
+
+  // Load navbar name + photo
+  const navName = document.getElementById("nav-username");
+  const navIcon = document.getElementById("nav-user-icon");
+  if (navName) navName.textContent = "Loading...";
+
+  onAuthStateChanged(auth, async (user) => {
+    if (!user) {
+      if (navName) navName.textContent = "User";
+      if (navIcon) navIcon.src = "Images/user.png";
+      return;
+    }
+
+    const ref = doc(db, "users", user.uid);
+    const snap = await getDoc(ref);
+
+    if (snap.exists()) {
+      const data = snap.data();
+      if (navName) navName.textContent = data.name || "User";
+      if (navIcon) navIcon.src = data.photoBase64 || data.photoURL || "Images/user.png";
+    }
+  });
+
+});
+</script>
+
+
+</body>
+</html>
